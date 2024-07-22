@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import time 
 
-def set_parameters(search_param="obama", category_param=[True,True,True,True], selector_param='3', page_limit=5):
+def set_parameters(search_param="obama", category_param=[True,True], selector_param='3', page_limit=5):
     return search_param, category_param, selector_param, page_limit
 
 def parse_and_format_date(date_string, search_date):
@@ -61,6 +61,11 @@ def search_keyword():
         # Navigate to the website
         page = browser.goto("https://apnews.com")
 
+        # privacy policy button
+        privacy_button_selector = "#onetrust-accept-btn-handler"
+        if page.is_visible(privacy_button_selector, timeout=5000):
+            page.click(privacy_button_selector)
+
         # Wait for the search button to be visible and click it
         page.wait_for_selector("button.SearchOverlay-search-button")
         page.click("button.SearchOverlay-search-button")
@@ -89,12 +94,6 @@ def search_keyword():
         if category[1]:
             page.check("input[name='f2'][value='00000188-f942-d221-a78c-f9570e360000']")  # Stories
         
-        if category[2]: 
-            page.check("input[name='f2'][value=00000189-9323-db0a-a7f9-9b7fb64a0000]") # Subsections
-
-        # skipped videos
-        if category[3]:
-            page.check("input[name='f2][value=00000188-d597-dc35-ab8d-d7bf1ce10000]") # Video
         
         page.press(search_input_selector, "Enter")
         page.reload()
@@ -157,7 +156,7 @@ def search_keyword():
         df = pd.DataFrame(extracted_data)
         
         # Save DataFrame to an Excel file
-        df.to_excel("extracted_story_data.xlsx", index=False, engine='openpyxl')
+        df.to_excel("output/extracted_story_data.xlsx", index=False, engine='openpyxl')
 
         print('Done')
 
