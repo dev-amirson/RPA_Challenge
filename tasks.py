@@ -3,12 +3,21 @@ from robocorp.tasks import task
 from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 import pandas as pd
-import time 
+import time, os
+from dotenv import load_dotenv
+load_dotenv()
 
-def set_parameters(search_param="obama", category_param=[True,True], selector_param='3', page_limit=5):
-    return search_param, category_param, selector_param, page_limit
+# Add an env file with these variables, sample values also provided
+# SEARCH="obama"
+# STORIES=True
+# BLOG=True
+# SELECTOR="3"
+# LIMIT=5
 
 def parse_and_format_date(date_string, search_date):
+    """
+    Changes time format to match
+    """
     current_date = datetime.strptime(search_date, "%B %d %Y")
     if date_string == "No date found":
         return search_date
@@ -44,13 +53,21 @@ def search_keyword():
     """
     Navigate to temp.com, click the search button, and fill out the search input field.
     """
+    category = [False, False]
+    search_phrase = os.environ["SEARCH"]
 
-    search_phrase, category, selector, limit = set_parameters()
+    # Convert string to boolean
+    category[0] = os.environ["STORIES"].lower() == 'true'
+    category[1] = os.environ["BLOG"].lower() == 'true'
+
+    selector = os.environ["SELECTOR"]
+    limit = int(os.environ["LIMIT"])
+
     search_time = datetime.now()
     search_date = search_time.strftime("%B %d %Y")
 
     browser.configure(
-        browser_engine="firefox",
+        browser_engine="chromium",
         screenshot="only-on-failure",
         headless=False,
     )
@@ -60,12 +77,12 @@ def search_keyword():
     try:
         # Navigate to the website
         page = browser.goto("https://apnews.com")
-
+        time.sleep(5)
+      
         # privacy policy button
-        privacy_button_selector = "#onetrust-accept-btn-handler"
-        if page.is_visible(privacy_button_selector, timeout=5000):
-            page.click(privacy_button_selector)
-
+        page.wait_for_selector("div.has-reject-all-button div.banner-actions-container button")
+        page.click("div.has-reject-all-button div.banner-actions-container button")
+ 
         # Wait for the search button to be visible and click it
         page.wait_for_selector("button.SearchOverlay-search-button")
         page.click("button.SearchOverlay-search-button")
@@ -93,7 +110,6 @@ def search_keyword():
     
         if category[1]:
             page.check("input[name='f2'][value='00000188-f942-d221-a78c-f9570e360000']")  # Stories
-        
         
         page.press(search_input_selector, "Enter")
         page.reload()
